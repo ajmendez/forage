@@ -1,0 +1,14 @@
+#!/usr/bin/evn python
+import os, sys
+from forage.api import Forage
+
+FULL = ('full' in sys.argv)
+FILENAME = os.path.expanduser('~/data/feedly/forage.json')
+
+def main():
+  api = Forage()
+
+
+
+if __name__ == '__main__':
+  main()
