@@ -1,18 +1,30 @@
 # api -- some nice api like functions.
 import os
+import pwd
+import grp
 import json
+import time
 import client
+import tarfile
+import calendar
 import requests
+import StringIO
 import numpy as np
 from pprint import pprint
 from datetime import datetime
 
-RATELIMIT = 200 # really this is 250 -- but lets not anger the gods.
+RATELIMIT = 2400 # really this is 250 -- but lets not anger the gods.
 URL = 'http://cloud.feedly.com/v3/'
 
-USERFILE = os.path.expanduser('~/data/feedly/user.json')
-READFILE = os.path.expanduser('~/data/feedly/read.json')
-SAVEDFILE = os.path.expanduser('~/data/feedly/saved.json')
+# USERFILE = os.path.expanduser('~/data/feedly/user.json')
+# READFILE = os.path.expanduser('~/data/feedly/read.json')
+# SAVEDFILE = os.path.expanduser('~/data/feedly/saved.json')
+DIRECTORY = os.path.expanduser('~/data/feedly/')
+USERFILE = DIRECTORY + 'user.tar.gz'
+READFILE = DIRECTORY + 'read.tar.gz'
+SAVEDFILE = DIRECTORY + 'saved.tar.gz'
+
+
 
 
 try:
@@ -33,33 +45,81 @@ def convert_time(timestamp):
 
 class Data(object):
   def __init__(self, filename, fcn=list):
+    '''Setup a Data object that is saved to a filename.
+    fcn is the base datatype that starts the object if one does not exist.
+    filename should be xxx.json, or xxx.tar.gz 
+    '''
     self.filename = filename
     self.fcn = fcn
     
   def __enter__(self, *args, **kwargs):
+    '''With constructor -- asks user for confirmation if file
+    does not exist -- I think this is a good thing.'''
     try:
       self.data = self.load()
-    except:
+    except Exception as e:
+      self.data = self.fcn()
       print ' Failed to load: {}'.format(self.filename)
+      print e
       isok = raw_input('Are you ok with this? [yes/no]: ')
-      if 'y' in isok.lower():
-        self.data = self.fcn()
-      else:
+      if 'y' not in isok.lower():
         raise
+      # ensure that the directory exists
+      dirname = os.path.dirname(self.filename)
+      if not os.path.exists(dirname):
+        os.makedirs(dirname)
     return self
   
   def __exit__(self, *args, **kwargs):
-    json.dump(self.data, 
-              open(self.filename,'w'),
-              indent=2)
+    '''save the file on exit'''
+    self.save()
   
   def __len__(self):
+    '''len() of object'''
     return len(self.data)
   
+  def save(self):
+    '''Save the file as a json.dump or a tarfile depending
+    on the file ending'''
+    if '.tar.gz' in self.filename:
+      self.savegz()
+    else:
+      json.dump(self.data, open(self.filename,'w'), indent=2)
+  
   def load(self):
-    return json.load(open(self.filename))
+    '''Load the file as a json file or a tar file.'''
+    if '.tar.gz' in self.filename:
+      return self.loadgz()
+    else:
+      return json.load(open(self.filename))
+  
+  def getname(self):
+    '''get a nice file name to put within the tar file.'''
+    return os.path.basename(self.filename).replace('.tar.gz','.json')
+  
+  def savegz(self):
+    '''save the file within a gziped tar file'''
+    with tarfile.open(self.filename, 'w:gz') as tar:
+      fileobj = StringIO.StringIO()
+      json.dump(self.data, fileobj, indent=2)
+      fileobj.seek(0)
+      tarinfo = tarfile.TarInfo(self.getname())
+      tarinfo.size = fileobj.len
+      tarinfo.mtime = calendar.timegm(time.gmtime())
+      tarinfo.mode = int('0644', 8) # convert to octal
+      tarinfo.uid = os.getuid()
+      tarinfo.uname = pwd.getpwuid(tarinfo.uid)[0]
+      tarinfo.gid = os.getgid()
+      tarinfo.gname = grp.getgrgid(tarinfo.gid)[0]
+      tar.addfile(tarinfo, fileobj)
+  
+  def loadgz(self):
+    '''Load a json object out of a tar.'''
+    with tarfile.open(self.filename, 'r:gz') as tar:
+      return json.load(tar.extractfile(tar.getmember(self.getname())))
   
   def append(self, item):
+    '''Append to the file'''
     self.data.append(item)
   
   def get(self, key):

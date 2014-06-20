@@ -16,8 +16,7 @@ def save(label, filename, item):
   with api.Data(filename) as data:
     previous = data.get(KEY)
     fcn = getattr(feedly,item)
-    n_new = 0
-    n_skip = 0
+    n_new,n_skip = 0,0
     for item in fcn(repeat=REPEAT, count=COUNT):
       if item[KEY] not in previous:
         data.append(item)
@@ -43,6 +42,6 @@ def profile():
 
 if __name__ == '__main__':
   profile()
-  # save('Saved', api.SAVEDFILE, 'gen_saved')
+  save('Saved', api.SAVEDFILE, 'gen_saved')
   # save('Read', api.READFILE, 'gen_read')
   print 'Done!'
