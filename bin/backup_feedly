@@ -32,6 +32,7 @@ def save(label, filename, item):
     print '{} Added: {}.  Total: {}'.format(label, n_new, len(data))
 
 def profile():
+  '''save the profile information.'''
   feedly = api.Forage()
   with api.Data(api.USERFILE, dict) as data:
     data.data['profile'] = feedly.get_profile()
