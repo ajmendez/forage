@@ -1,14 +1,48 @@
-#!/usr/bin/evn python
+#!/usr/bin/env python
 import os, sys
-from forage.api import Forage
+from forage import api
+from pprint import pprint
 
 FULL = ('full' in sys.argv)
-FILENAME = os.path.expanduser('~/data/feedly/forage.json')
+KEY = 'id'
+COUNT = 10000 if FULL else 1000
+REPEAT = None if FULL else 2
+NSKIP = 3
 
-def main():
-  api = Forage()
 
+def save(label, filename, item):
+  '''Backup the saved links'''
+  feedly = api.Forage()
+  with api.Data(filename) as data:
+    previous = data.get(KEY)
+    fcn = getattr(feedly,item)
+    n_new = 0
+    n_skip = 0
+    for item in fcn(repeat=REPEAT, count=COUNT):
+      if item[KEY] not in previous:
+        data.append(item)
+        n_new += 1
+      else:
+        n_skip += 1
+        if (n_skip > NSKIP) and (not FULL):
+          break
+      
+      if ((n_new % 1000) == 0) and (n_new != 0):
+        print ' new: {}. skip: {}. ratelimit: {}'.format(n_new, n_skip, feedly.ratelimit)
+    
+    print '{} Added: {}.  Total: {}'.format(label, n_new, len(data))
+
+def profile():
+  feedly = api.Forage()
+  with api.Data(api.USERFILE, dict) as data:
+    data.data['profile'] = feedly.get_profile()
+    data.data['feeds'] = feedly.get_feeds()
+    pprint(dict(feedly.headers))
+    
 
 
 if __name__ == '__main__':
-  main()
+  profile()
+  # save('Saved', api.SAVEDFILE, 'gen_saved')
+  # save('Read', api.READFILE, 'gen_read')
+  print 'Done!'
