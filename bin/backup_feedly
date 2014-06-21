@@ -42,7 +42,11 @@ def profile():
 
 
 if __name__ == '__main__':
+  from pysurvey import util
+  util.setup_stop()
+  
+  
   profile()
   save('Saved', api.SAVEDFILE, 'gen_saved')
-  # save('Read', api.READFILE, 'gen_read')
+  save('Read', api.READFILE, 'gen_read')
   print 'Done!'

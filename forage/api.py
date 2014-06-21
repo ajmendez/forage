@@ -13,7 +13,7 @@ import numpy as np
 from pprint import pprint
 from datetime import datetime
 
-RATELIMIT = 2400 # really this is 250 -- but lets not anger the gods.
+RATELIMIT = 240 # really this is 250 -- but lets not anger the gods.
 URL = 'http://cloud.feedly.com/v3/'
 
 # USERFILE = os.path.expanduser('~/data/feedly/user.json')
@@ -194,6 +194,9 @@ class Forage(object):
       data = self.get_streams(streamid, **kwargs)
       
       # yield an item
+      if 'items' not in data:
+        print data
+        raise ValueError('Did not return items -- probably error or rate limit')
       for item in data['items']:
         yield item
       
