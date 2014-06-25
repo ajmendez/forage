@@ -11,7 +11,7 @@ NSKIP = 3
 
 
 def save(label, filename, item):
-  '''Backup the saved links'''
+  '''Backup the saved/read links'''
   feedly = api.Forage()
   with api.Data(filename) as data:
     previous = data.get(KEY)
