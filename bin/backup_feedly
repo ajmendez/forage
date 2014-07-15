@@ -13,24 +13,29 @@ NSKIP = 3
 def save(label, filename, item):
   '''Backup the saved/read links'''
   feedly = api.Forage()
-  with api.Data(filename) as data:
-    previous = data.get(KEY)
-    fcn = getattr(feedly,item)
-    n_new,n_skip = 0,0
-    for item in fcn(repeat=REPEAT, count=COUNT):
-      if item[KEY] not in previous:
-        data.append(item)
-        n_new += 1
-      else:
-        n_skip += 1
-        if (n_skip > NSKIP) and (not FULL):
-          break
-      
-      if ((n_new % 1000) == 0) and (n_new != 0):
-        print ' new: {}. skip: {}. ratelimit: {}'.format(n_new, n_skip, feedly.ratelimit)
+  data = api.Data(filename)
+  data.load()
+  previous = data.get(KEY)
+  fcn = getattr(feedly,item)
+  n_new,n_skip = 0,0
+  for item in fcn(repeat=REPEAT, count=COUNT):
+    if item[KEY] not in previous:
+      data.append(item)
+      n_new += 1
+    else:
+      n_skip += 1
+      if (n_skip > NSKIP) and (not FULL):
+        break
+    
+    if ((n_new % 1000) == 0) and (n_new != 0):
+      print ' new: {}. skip: {}. ratelimit: {}'.format(n_new, n_skip, feedly.ratelimit)
+    if ((n_new % 20000) == 0) and (n_new != 0):
+      data.save()
     
     print '{} Added: {}.  Total: {}'.format(label, n_new, len(data))
-
+    data.save()
+    
+    
 def profile():
   '''save the profile information.'''
   feedly = api.Forage()

@@ -56,7 +56,7 @@ class Data(object):
     '''With constructor -- asks user for confirmation if file
     does not exist -- I think this is a good thing.'''
     try:
-      self.data = self.load()
+      self.load()
     except Exception as e:
       self.data = self.fcn()
       print ' Failed to load: {}'.format(self.filename)
@@ -89,9 +89,10 @@ class Data(object):
   def load(self):
     '''Load the file as a json file or a tar file.'''
     if '.tar.gz' in self.filename:
-      return self.loadgz()
+      self.data = self.loadgz()
     else:
-      return json.load(open(self.filename))
+      self.data = json.load(open(self.filename))
+
   
   def getname(self):
     '''get a nice file name to put within the tar file.'''
